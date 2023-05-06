@@ -1,0 +1,194 @@
+import java.awt.*;
+import java.awt.event.*;
+import javax.swing.*;
+
+public class ChessGame extends JFrame {
+    private static final int BOARD_SIZE = 8;
+
+    private ChessPiece[][] board;
+    private ChessPiece selectedPiece;
+    private boolean whiteTurn;
+
+    public ChessGame() {
+        setTitle("Java Chess Game");
+        setSize(600, 600);
+        setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+
+        JPanel boardPanel = new JPanel(new GridLayout(BOARD_SIZE, BOARD_SIZE));
+        boardPanel.setPreferredSize(new Dimension(500, 500));
+        getContentPane().add(boardPanel, BorderLayout.CENTER);
+
+        // Initialize the board
+        board = new ChessPiece[BOARD_SIZE][BOARD_SIZE];
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                if (row == 0 || row == BOARD_SIZE - 1) {
+                    // Add back row pieces
+                    if (col == 0 || col == BOARD_SIZE - 1) {
+                        board[row][col] = new ChessPiece(ChessPieceType.ROOK, row, col);
+                    } else if (col == 1 || col == BOARD_SIZE - 2) {
+                        board[row][col] = new ChessPiece(ChessPieceType.KNIGHT, row, col);
+                    } else if (col == 2 || col == BOARD_SIZE - 3) {
+                        board[row][col] = new ChessPiece(ChessPieceType.BISHOP, row, col);
+                    } else if (col == 3) {
+                        board[row][col] = new ChessPiece(ChessPieceType.QUEEN, row, col);
+                    } else if (col == 4) {
+                        board[row][col] = new ChessPiece(ChessPieceType.KING, row, col);
+                    }
+                } else if (row == 1 || row == BOARD_SIZE - 2) {
+                    // Add second row pieces
+                    board[row][col] = new ChessPiece(ChessPieceType.PAWN, row, col);
+                }
+            }
+        }
+
+        // Add the pieces to the board panel
+        for (int row = 0; row < BOARD_SIZE; row++) {
+            for (int col = 0; col < BOARD_SIZE; col++) {
+                JPanel squarePanel = new JPanel(new BorderLayout());
+                boardPanel.add(squarePanel);
+
+                if ((row + col) % 2 == 0) {
+                    squarePanel.setBackground(Color.WHITE);
+                } else {
+                    squarePanel.setBackground(Color.GRAY);
+                }
+
+                ChessPiece piece = board[row][col];
+                if (piece != null) {
+                    JLabel pieceLabel = new JLabel(piece.getType().getSymbol());
+                    pieceLabel.setFont(new Font("Serif", Font.PLAIN, 48));
+                    squarePanel.add(pieceLabel, BorderLayout.CENTER);
+
+                    pieceLabel.addMouseListener(new MouseAdapter() {
+                        public void mouseClicked(MouseEvent e) {
+                            if (piece.isWhite() != whiteTurn) {
+                                return;
+                            }
+                            if (selectedPiece == null) {
+                                selectedPiece = piece;
+                                squarePanel.setBackground(Color.YELLOW);
+                            } else if (selectedPiece == piece) {
+                                selectedPiece = null;
+                                if ((row + col) % 2 == 0) {
+                                    squarePanel.setBackground(Color.WHITE);
+                                } else {
+                                    squarePanel.setBackground(Color.GRAY);
+                                }
+                            } else {
+                                if (selectedPiece.isValidMove(row, col, board)) {
+                                    board[row][col] = selectedPiece;
+                                    board[selectedPiece.getRow()][selectedPiece.getCol()] = null;
+                                    selectedPiece.move(row, col);
+                                    boardPanel.removeAll();
+                                    for (int r = 0; r < BOARD_SIZE; r++) {
+                                        for (int c = 0; c < BOARD_SIZE; c++) {
+                                            JPanel squarePanel = new JPanel(new BorderLayout());
+                                            boardPanel.add(squarePanel);
+
+                                            if ((r + c) % 2 == 0) {
+                                                squarePanel.setBackground(Color.WHITE);
+                                            } else {
+                                                squarePanel.setBackground(Color.GRAY);
+                                            }
+
+                                            ChessPiece piece = board[r][c];
+                                            if (piece != null) {
+                                                JLabel pieceLabel = new JLabel(piece.getType().getSymbol());
+                                                pieceLabel.setFont(new Font("Serif", Font.PLAIN, 48));
+                                                squarePanel.add(pieceLabel, BorderLayout.CENTER);
+                                            }
+                                        }
+                                    }
+                                    whiteTurn = !whiteTurn;
+                                }
+                                selectedPiece = null;
+                                if ((row + col) % 2 == 0) {
+                                    squarePanel.setBackground(Color.WHITE);
+                                } else {
+                                    squarePanel.setBackground(Color.GRAY);
+                                }
+                            }
+                        }
+                    });
+                }
+            }
+        }
+
+        setVisible(true);
+    }
+
+    public static void main(String[] args) {
+        new ChessGame();
+    }
+}
+
+enum ChessPieceType {
+    KING("♔", true),
+    QUEEN("♕", true),
+    ROOK("♖", true),
+    BISHOP("♗", true),
+    KNIGHT("♘", true),
+    PAWN("♙", true),
+    KING_BLACK("♚", false),
+    QUEEN_BLACK("♛", false),
+    ROOK_BLACK("♜", false),
+    BISHOP_BLACK("♝", false),
+    KNIGHT_BLACK("♞", false),
+    PAWN_BLACK("♟", false),
+    EMPTY(" ", false);
+
+    private String symbol;
+    private boolean isWhite;
+
+    ChessPieceType(String symbol, boolean isWhite) {
+        this.symbol = symbol;
+        this.isWhite = isWhite;
+    }
+
+    public String getSymbol() {
+        return symbol;
+    }
+
+    public boolean isWhite() {
+        return isWhite;
+    }
+}
+
+class ChessPiece {
+    private ChessPieceType type;
+    private int row;
+    private int col;
+
+    public ChessPiece(ChessPieceType type, int row, int col) {
+        this.type = type;
+        this.row = row;
+        this.col = col;
+    }
+
+    public ChessPieceType getType() {
+        return type;
+    }
+
+    public boolean isWhite() {
+        return type.isWhite();
+    }
+
+    public int getRow() {
+        return row;
+    }
+
+    public int getCol() {
+        return col;
+    }
+
+    public void move(int newRow, int newCol) {
+        row = newRow;
+        col = newCol;
+    }
+
+    public boolean isValidMove(int newRow, int newCol, ChessPiece[][] board) {
+        // TODO: Implement valid move logic for each piece type
+        return true;
+    }
+}
